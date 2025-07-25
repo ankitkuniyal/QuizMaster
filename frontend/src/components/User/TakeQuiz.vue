@@ -1,13 +1,42 @@
 <template>
   <section class="dashboard-section">
     <div class="container-fluid">
+      <!-- Already Submitted Modal -->
+      <div v-if="showAlreadySubmittedModal" class="modal-backdrop">
+        <div class="modal-content already-submitted-modal">
+          <div class="modal-header already-submitted-header">
+            <h2 class="modal-title already-submitted-title">
+              <i class="fas fa-exclamation-circle me-2"></i>
+              Quiz Already Submitted
+            </h2>
+          </div>
+          <div class="modal-body already-submitted-body">
+            <div class="already-submitted-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <p class="already-submitted-text">
+              <b>You have already submitted this quiz.</b>
+              <br>
+              If you proceed, you will <span style="color:#ef4444;font-weight:600;">re-attempt</span> the quiz and your new submission will <span style="color:#ef4444;font-weight:600;">overwrite</span> the previous one.
+            </p>
+          </div>
+          <div class="modal-footer already-submitted-footer">
+            <button class="btn btn-gradient-primary btn-lg" @click="proceedAfterAlreadySubmitted">
+              <i class="fas fa-redo me-2"></i> Re-attempt Quiz
+            </button>
+            <button class="btn btn-outline-secondary btn-lg me-2" @click="goBackToDashboard">
+              <i class="fas fa-times me-2"></i> Cancel
+            </button>
+          </div>
+        </div>
+      </div>
       <!-- Quiz Header -->
       <div class="dashboard-header mb-4">
         <div class="row align-items-center">
           <div class="col-12">
             <div class="welcome-content">
               <h1 class="welcome-title">
-                <i class="fas fa-question-circle me-2"></i> {{ quiz.title }}
+                {{ quiz.title }}
               </h1>
               <div class="quiz-meta">
                 <span class="badge bg-primary me-2" v-if="quiz.subject || quiz.subject_name">
@@ -45,9 +74,14 @@
           <!-- Main Quiz Area -->
           <div class="col-12 col-lg-8">
             <div class="section-card">
-              <!-- Question Card -->
-              <div v-if="questions.length" class="question-content">
+              <!-- Question Card (Normal/Review Mode) -->
+              <div v-if="questions.length && (!showReviewMode)" class="question-content">
                 <div class="question-header mb-4">
+                  <div class="question-number-label">
+                    <span class="question-number-badge">
+                      <i class="fas fa-q"></i>  {{  currentQuestionIndex + 1 }}
+                    </span>
+                  </div>
                   <h3 class="question-text">{{ currentQuestion.text }}</h3>
                   <div v-if="currentQuestion.image" class="question-image mt-3">
                     <img :src="currentQuestion.image" alt="Question illustration" class="img-fluid rounded">
@@ -80,27 +114,114 @@
                   </div>
                 </div>
 
+                <!-- Report Question Button and Message -->
+                <div class="d-flex align-items-center mb-3" style="gap: 1rem;">
+                  <button
+                    class="btn btn-outline-danger"
+                    @click="reportCurrentQuestion"
+                    :disabled="userAnswers[currentQuestionIndex] === -1"
+                  >
+                    <i class="fas fa-flag me-2"></i> Report Question
+                  </button>
+                  <span v-if="showReportMessage" class="text-danger" style="font-weight:600;">
+                    Question reported. It will be reviewed shortly. Moving to next question...
+                  </span>
+                </div>
+
                 <!-- Navigation Buttons -->
                 <div class="quiz-navigation mt-4">
                   <button 
+                    v-if="currentQuestionIndex !== 0"
                     class="btn btn-outline-secondary" 
-                    :disabled="currentQuestionIndex === 0"
                     @click="prevQuestion"
                   >
                     <i class="fas fa-arrow-left me-2"></i> Previous
                   </button>
-                  <button 
+                  <span v-else></span>
+                  <button
+                    v-if="currentQuestionIndex < questions.length - 1"
                     class="btn btn-gradient-primary"
-                    :disabled="currentQuestionIndex === questions.length - 1"
                     @click="nextQuestion"
                   >
                     Next Question <i class="fas fa-arrow-right ms-2"></i>
+                  </button>
+                  <button
+                    v-else
+                    class="btn btn-gradient-primary"
+                    @click="confirmSubmit"
+                    :disabled="showQuizResults"
+                  >
+                    <i class="fas fa-paper-plane me-2"></i> Submit Quiz
+                  </button>
+                </div>
+              </div>
+
+              <!-- Review Mode -->
+              <div v-if="showReviewMode && questions.length" class="question-content">
+                <div class="question-header mb-4">
+                  <div class="question-number-label">
+                    <span class="question-number-badge">
+                      <i class="fas fa-hashtag"></i> {{ currentQuestionIndex + 1 }}
+                    </span>
+                    <span class="question-number-total">/ {{ questions.length }}</span>
+                  </div>
+                  <h3 class="question-text">Review: {{ currentQuestion.text }}</h3>
+                  <div v-if="currentQuestion.image" class="question-image mt-3">
+                    <img :src="currentQuestion.image" alt="Question illustration" class="img-fluid rounded">
+                  </div>
+                </div>
+                <div class="options-grid">
+                  <div
+                    v-for="(option, index) in currentQuestion.options"
+                    :key="index"
+                    class="option-card"
+                    :class="{
+                      'selected': userAnswers[currentQuestionIndex] === index,
+                      'correct': isReviewCorrectOption(index),
+                      'incorrect': isReviewIncorrectOption(index)
+                    }"
+                  >
+                    <div class="option-letter" :style="{ backgroundColor: getOptionColor(index) }">
+                      {{ String.fromCharCode(65 + index) }}
+                    </div>
+                    <div class="option-content">
+                      <div class="option-text">{{ option }}</div>
+                      <div class="option-feedback">
+                        <i v-if="isReviewCorrectOption(index)" class="fas fa-check-circle correct-icon"></i>
+                        <i v-else-if="isReviewIncorrectOption(index)" class="fas fa-times-circle incorrect-icon"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Navigation Buttons in Review Mode -->
+                <div class="quiz-navigation mt-4">
+                  <button 
+                    v-if="currentQuestionIndex !== 0"
+                    class="btn btn-outline-secondary" 
+                    @click="prevQuestion"
+                  >
+                    <i class="fas fa-arrow-left me-2"></i> Previous
+                  </button>
+                  <span v-else></span>
+                  <button
+                    v-if="currentQuestionIndex < questions.length - 1"
+                    class="btn btn-gradient-primary"
+                    @click="nextQuestion"
+                  >
+                    Next Question <i class="fas fa-arrow-right ms-2"></i>
+                  </button>
+                  <button
+                    v-else
+                    class="btn btn-gradient-primary"
+                    @click="exitReviewMode"
+                  >
+                    Done Reviewing
                   </button>
                 </div>
               </div>
 
               <!-- Empty State -->
-              <div v-else class="empty-state">
+              <div v-else-if="!questions.length" class="empty-state">
                 <i class="fas fa-exclamation-circle"></i>
                 <p>No questions available for this quiz</p>
               </div>
@@ -129,7 +250,7 @@
                     class="question-number"
                     :class="{
                       'active': idx === currentQuestionIndex,
-                      'answered': userAnswers[idx] !== null
+                      'answered': userAnswers[idx] !== null && !showReviewMode
                     }"
                     @click="goToQuestion(idx)"
                   >
@@ -137,22 +258,14 @@
                   </div>
                 </div>
               </div>
-
-              <!-- Submit Button -->
-              <button
-                class="btn btn-gradient-primary w-100 mt-3"
-                @click="confirmSubmit"
-                :disabled="showQuizResults"
-              >
-                <i class="fas fa-paper-plane me-2"></i> Submit Quiz
-              </button>
+              <!-- No Submit Quiz button in sidebar -->
             </div>
           </div>
         </div>
       </div>
 
       <!-- Quiz Results Modal -->
-      <div v-if="showQuizResults" class="modal-backdrop">
+      <div v-if="showQuizResults && !showReviewMode" class="modal-backdrop">
         <div class="modal-content quiz-results">
           <div class="modal-header">
             <h2 class="modal-title">
@@ -161,6 +274,10 @@
             </h2>
           </div>
           <div class="modal-body">
+            <!-- Congrats Banner -->
+            <div class="quiz-congrats-banner">
+              🎉 Congratulations! You have completed the quiz! 🎉
+            </div>
             <div class="result-stats">
               <div class="stat-card stat-primary">
                 <div class="stat-icon">
@@ -172,6 +289,16 @@
                 </div>
               </div>
               
+              <div class="stat-card stat-incorrect">
+                <div class="stat-icon">
+                  <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">{{ incorrectAnswers }}</div>
+                  <div class="stat-label">Incorrect Answers</div>
+                </div>
+              </div>
+
               <div class="stat-card stat-success">
                 <div class="stat-icon">
                   <i class="fas fa-percentage"></i>
@@ -191,28 +318,28 @@
                   <div class="stat-label">Time Taken</div>
                 </div>
               </div>
-            </div>
-            
-            <div class="result-breakdown">
-              <h4>Question Breakdown</h4>
-              <div class="questions-list">
-                <div 
-                  v-for="(q, idx) in questions" 
-                  :key="q.id"
-                  class="question-result"
-                  :class="{ 'correct': resultData.user_correct_answers && resultData.user_correct_answers[q.id], 'incorrect': resultData.user_correct_answers && !resultData.user_correct_answers[q.id] }"
-                  @click="goToQuestion(idx)"
-                >
-                  <div class="question-number">Q{{ idx + 1 }}</div>
-                  <div class="question-status">
-                    <i :class="resultData.user_correct_answers && resultData.user_correct_answers[q.id] ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
-                  </div>
-                  <div class="question-text">{{ q.text }}</div>
+              <div class="stat-card stat-info">
+                <div class="stat-icon">
+                  <i class="fas fa-list"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">{{ questions.length }}</div>
+                  <div class="stat-label">Total Questions</div>
                 </div>
               </div>
             </div>
+            <!-- Extra Info: Show percentage of correct answers -->
+            <div class="text-center mt-3" style="font-size:1.1rem;">
+              <span>
+                You answered <b>{{ resultData.correct_answers }}</b> out of <b>{{ questions.length }}</b> questions correctly.
+                <span v-if="incorrectAnswers > 0"> You got <b>{{ incorrectAnswers }}</b> wrong.</span>
+              </span>
+            </div>
           </div>
           <div class="modal-footer">
+            <button class="btn btn-outline-secondary me-2" @click="enterReviewMode">
+              <i class="fas fa-eye me-2"></i> Review Answers
+            </button>
             <button class="btn btn-gradient-primary" @click="finishQuiz">
               <i class="fas fa-home me-2"></i> Return to Dashboard
             </button>
@@ -254,7 +381,6 @@
     </div>
   </section>
 </template>
-
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -264,7 +390,7 @@ const router = useRouter()
 const route = useRoute()
 
 const quiz = ref({
-  title: 'Loading Quiz...',
+  
   description: '',
   subject: '',
   subject_name: '',
@@ -273,7 +399,7 @@ const quiz = ref({
   difficulty: '',
   author: '',
   author_name: '',
-  timeLimit: 300,
+  timeLimit: '',
   created_at: ''
 })
 const questions = ref([])
@@ -287,6 +413,13 @@ const resultData = ref({})
 const quizLoaded = ref(false)
 const quizId = route.params.quizid
 const showConfirmModal = ref(false)
+const showReviewMode = ref(false)
+const showAlreadySubmittedModal = ref(false)
+const alreadySubmitted = ref(false)
+
+// For reporting question
+const showReportMessage = ref(false)
+let reportTimeout = null
 
 function getUserIdFromToken() {
   try {
@@ -307,13 +440,18 @@ const answeredCount = computed(() => {
   return userAnswers.value.filter(answer => answer !== null).length
 })
 
+const incorrectAnswers = computed(() => {
+  if (typeof resultData.value.correct_answers !== 'number') return 0
+  return questions.value.length - resultData.value.correct_answers
+})
+
 function getOptionColor(index) {
   const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6']
   return colors[index % colors.length]
 }
 
 function selectOption(index) {
-  if (!showResults.value && !showQuizResults.value) {
+  if (!showResults.value && !showQuizResults.value && userAnswers.value[currentQuestionIndex.value] !== -1) {
     userAnswers.value[currentQuestionIndex.value] = index
   }
 }
@@ -332,7 +470,6 @@ function prevQuestion() {
 
 function goToQuestion(idx) {
   currentQuestionIndex.value = idx
-  showQuizResults.value = false
 }
 
 function formatTime(seconds) {
@@ -361,7 +498,7 @@ async function fetchQuizMeta() {
     quiz.value.difficulty = data.difficulty || ''
     quiz.value.author = data.author_name || data.author || ''
     quiz.value.author_name = data.author_name || ''
-    quiz.value.timeLimit = data.time_limit || data.timeLimit || 300
+    quiz.value.timeLimit = data.duration || data.timeLimit || 300
     quiz.value.created_at = data.created_at || ''
     timeLeft.value = quiz.value.timeLimit
   } catch (e) {
@@ -378,6 +515,23 @@ async function fetchQuizQuestions() {
     console.error("Error fetching quiz questions:", e)
     questions.value = []
     userAnswers.value = []
+  }
+}
+
+// Fetch user's previous results for this quiz
+async function checkIfAlreadySubmitted() {
+  try {
+    // Fetch all results for this user
+    const { data } = await api.get(`/result/${userId}`)
+    // Check if any result matches this quizId
+    if (Array.isArray(data)) {
+      alreadySubmitted.value = data.some(r => String(r.quiz_id) === String(quizId))
+      if (alreadySubmitted.value) {
+        showAlreadySubmittedModal.value = true
+      }
+    }
+  } catch (e) {
+    console.error("Error checking previous quiz submission:", e)
   }
 }
 
@@ -408,13 +562,13 @@ async function submitQuiz() {
   }
   
   try {
+    // Always allow submission (re-attempt overwrites previous)
     const { data } = await api.post(`/quizzes/${quizId}/submit`, payload)
     resultData.value = data
     showResults.value = true
     showQuizResults.value = true
   } catch (e) {
     console.error("Error submitting quiz:", e)
-    // Handle error (show message to user, etc.)
   }
 }
 
@@ -422,20 +576,86 @@ function finishQuiz() {
   router.push(`/dashboard/user/${userId}`)
 }
 
-onMounted(async () => {
-  await fetchQuiz()
-  timer.value = setInterval(() => {
-    if (timeLeft.value > 0) {
-      timeLeft.value--
-    } else {
-      submitQuiz()
+// Review mode logic
+function enterReviewMode() {
+  showReviewMode.value = true
+  currentQuestionIndex.value = 0
+}
+function exitReviewMode() {
+  showReviewMode.value = false
+}
+
+// Modal actions
+function proceedAfterAlreadySubmitted() {
+  showAlreadySubmittedModal.value = false
+  // Now load the quiz as normal (re-attempt)
+  fetchQuiz().then(() => {
+    quizLoaded.value = true
+    timer.value = setInterval(() => {
+      if (timeLeft.value > 0) {
+        timeLeft.value--
+      } else {
+        submitQuiz()
+      }
+    }, 1000)
+  })
+}
+function goBackToDashboard() {
+  router.push(`/dashboard/user/${userId}`)
+}
+
+// Report Question Logic
+async function reportCurrentQuestion() {
+  if (userAnswers.value[currentQuestionIndex.value] === -1) return
+  userAnswers.value[currentQuestionIndex.value] = -1
+  showReportMessage.value = true
+
+  // Optionally, send report to backend (uncomment if endpoint exists)
+  // try {
+  //   await api.post(`/questions/${questions.value[currentQuestionIndex.value].id}/report`, {
+  //     user_id: userId,
+  //     quiz_id: quizId
+  //   })
+  // } catch (e) {
+  //   // Ignore error for now
+  // }
+
+  // Move to next question after a short delay
+  if (reportTimeout) clearTimeout(reportTimeout)
+  reportTimeout = setTimeout(() => {
+    showReportMessage.value = false
+    if (currentQuestionIndex.value < questions.value.length - 1) {
+      currentQuestionIndex.value++
     }
-  }, 1000)
+  }, 1800)
+}
+
+onMounted(async () => {
+  // First, check if already submitted
+  await checkIfAlreadySubmitted()
+  // If not already submitted, proceed to load quiz
+  if (!alreadySubmitted.value) {
+    await fetchQuiz()
+    timer.value = setInterval(() => {
+      if (timeLeft.value > 0) {
+        timeLeft.value--
+      } else {
+        submitQuiz()
+      }
+    }, 1000)
+  }
 })
 
 onUnmounted(() => {
   clearInterval(timer.value)
+  if (reportTimeout) clearTimeout(reportTimeout)
 })
+function isReviewCorrectOption(index){
+  return resultData.value.correct_answers === index;
+}
+function isReviewIncorrectOption(index){
+  return !(resultData.value.correct_answers === index) && userAnswers.value[currentQuestionIndex.value] === index;
+}
 </script>
 
 <style scoped>
@@ -448,6 +668,95 @@ onUnmounted(() => {
 .container-fluid {
   max-width: 1400px;
   padding: 0 1.5rem;
+}
+
+/* Already Submitted Modal Custom Styles */
+.already-submitted-modal {
+  max-width: 520px !important;
+  min-width: 350px;
+  min-height: 340px;
+  padding: 2.5rem 2rem 2rem 2rem;
+  border: 3px solid #ef4444;
+  box-shadow: 0 8px 32px rgba(239,68,68,0.18);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.already-submitted-header {
+  border-bottom: none;
+  padding-bottom: 0;
+  width: 100%;
+  justify-content: center;
+}
+.already-submitted-title {
+  color: #ef4444;
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: center;
+  width: 100%;
+}
+.already-submitted-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.already-submitted-icon {
+  font-size: 3.5rem;
+  color: #ef4444;
+  margin-bottom: 1rem;
+  animation: shake 0.7s;
+}
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+.already-submitted-text {
+  font-size: 1.15rem;
+  color: #1f2937;
+  text-align: center;
+  margin-bottom: 0;
+  line-height: 1.6;
+}
+.already-submitted-footer {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+  border-top: none;
+  padding-top: 0;
+}
+.btn-lg {
+  font-size: 1.1rem;
+  padding: 1rem 2.25rem;
+  border-radius: 1rem;
+}
+
+/* Question Number Label */
+.question-number-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  gap: 0.5rem;
+}
+.question-number-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border-radius: 0.75rem;
+  padding: 0.4rem 1.1rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.08);
+}
+.question-number-total {
+  color: #6b7280;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 /* Header Section */
@@ -667,6 +976,23 @@ onUnmounted(() => {
   box-shadow: none;
 }
 
+/* Report Button */
+.btn-outline-danger {
+  border: 2px solid #ef4444;
+  color: #ef4444;
+  background: #fff;
+  transition: all 0.2s;
+}
+.btn-outline-danger:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #b91c1c;
+}
+.btn-outline-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Sidebar */
 .sidebar-card {
   position: sticky;
@@ -846,6 +1172,17 @@ onUnmounted(() => {
   background-color: #f0f9ff;
 }
 
+/* Incorrect stat card style */
+.stat-incorrect {
+  background-color: #fef2f2;
+  color: #ef4444;
+}
+
+.stat-incorrect .stat-icon {
+  background-color: #ef4444;
+  color: white;
+}
+
 .stat-icon {
   width: 48px;
   height: 48px;
@@ -877,9 +1214,30 @@ onUnmounted(() => {
   color: #1f2937;
 }
 
+.stat-incorrect .stat-number {
+  color: #ef4444;
+}
+
 .stat-label {
   font-size: 0.95rem;
   color: #6b7280;
+}
+
+.stat-incorrect .stat-label {
+  color: #ef4444;
+}
+
+/* Quiz congrats banner */
+.quiz-congrats-banner {
+  background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 0.75rem;
+  padding: 1rem 0.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(16,185,129,0.08);
 }
 
 /* Result Breakdown */
@@ -994,6 +1352,11 @@ onUnmounted(() => {
     height: 35px;
     font-size: 0.9rem;
   }
+  .already-submitted-modal {
+    max-width: 98vw !important;
+    min-width: 0;
+    padding: 1.5rem 0.5rem 1.5rem 0.5rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1050,6 +1413,15 @@ onUnmounted(() => {
   
   .option-text {
     font-size: 0.9rem;
+  }
+  .already-submitted-modal {
+    padding: 1rem 0.2rem 1rem 0.2rem;
+  }
+  .already-submitted-title {
+    font-size: 1.2rem;
+  }
+  .already-submitted-icon {
+    font-size: 2.2rem;
   }
 }
 </style>

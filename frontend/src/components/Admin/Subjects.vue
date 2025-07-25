@@ -25,29 +25,24 @@
               <i class="fas fa-tachometer-alt"></i>
               Dashboard
             </a>
-            
-              
-  
           </div>
         </div>
 
-      
-
       <!-- Filter Bar -->
-      <div class="stats-section mb-5">
-        <div class="row g-4">
+      <div class="stats-section mb-4" style="margin-bottom: 1.75rem !important;">
+        <div class="row g-2">
           <div class="col-12">
-            <div class="stat-card stat-primary">
-              <div class="stat-icon">
+            <div class="stat-card stat-primary" style="padding: 1.25rem 1.5rem; min-height: 68px; height: auto;">
+              <div class="stat-icon" style="width: 42px; height: 42px; font-size: 1.2rem;">
                 <i class="fas fa-filter"></i>
               </div>
-              <div class="stat-content">
-                <div class="d-flex flex-wrap align-items-center gap-4 justify-content-between">
-                  <div class="d-flex align-items-center gap-2">
+              <div class="stat-content" style="padding: 0;">
+                <div class="d-flex flex-wrap align-items-center gap-3 justify-content-between" style="min-height: 0;">
+                  <div class="d-flex align-items-center gap-2" style="margin-bottom: 0;">
                     <i class="fas fa-book-open text-white"></i>
-                    <span class="stat-label">Subject:</span>
-                    <select class="form-select ms-2"
-                      style="min-width: 180px;"
+                    <span class="stat-label" style="font-size: 0.98rem;">Subject:</span>
+                    <select class="form-select ms-2 py-1"
+                      style="min-width: 150px; font-size: 0.98rem; height: 36px;"
                       v-model="selectedSubject"
                       @change="selectedSubject ? selectSubject(selectedSubject) : resetAll()"
                     >
@@ -55,11 +50,11 @@
                       <option v-for="s in subjects" :key="s.id" :value="s">{{ s.name }}</option>
                     </select>
                   </div>
-                  <div class="d-flex align-items-center gap-2">
+                  <div class="d-flex align-items-center gap-2" style="margin-bottom: 0;">
                     <i class="fas fa-layer-group text-white"></i>
-                    <span class="stat-label">Chapter:</span>
-                    <select class="form-select ms-2"
-                      style="min-width: 180px;"
+                    <span class="stat-label" style="font-size: 0.98rem;">Chapter:</span>
+                    <select class="form-select ms-2 py-1"
+                      style="min-width: 150px; font-size: 0.98rem; height: 36px;"
                       v-model="selectedChapter"
                       :disabled="!selectedSubject"
                       @change="selectedChapter ? selectChapter(selectedChapter) : (sidebarMode = 'chapter', selectedQuiz = null)"
@@ -78,126 +73,8 @@
       <!-- Main Content Grid -->
       <div class="content-section mb-5">
         <div class="row g-4">
-          <!-- Sidebar -->
+          <!-- Main Form Content (now smaller) -->
           <div class="col-12 col-lg-4">
-            <div class="section-card">
-              <div class="section-header d-flex align-items-center gap-2">
-                <!-- Back Button -->
-                <button
-                  v-if="sidebarMode !== 'subject'"
-                  class="btn btn-link p-0 me-2"
-                  style="font-size: 1.2rem; color: #3b82f6;"
-                  @click="handleSidebarBack"
-                  title="Back"
-                >
-                  <i class="fas fa-arrow-left"></i>
-                </button>
-                <div>
-                  <h5 class="mb-0 d-inline">
-                    <i class="fas" :class="{
-                      'fa-book': sidebarMode === 'subject',
-                      'fa-layer-group': sidebarMode === 'chapter',
-                      'fa-book': sidebarMode === 'quiz'
-                    }" me-2></i>
-                    {{ sidebarMode === 'subject' ? 'Subjects' : 
-                       sidebarMode === 'chapter' ? 'Chapters' : 'Quizzes' }}
-                  </h5>
-                  <p v-if="sidebarMode === 'subject'">All available subjects</p>
-                  <p v-else-if="sidebarMode === 'chapter'">Chapters in {{ selectedSubject?.name }}</p>
-                  <p v-else>Quizzes in {{ selectedChapter?.name }}</p>
-                </div>
-              </div>
-              
-              <!-- Subjects List -->
-              <template v-if="sidebarMode === 'subject'">
-                <div class="progress-list">
-                  <div
-                    v-for="subject in subjects"
-                    :key="subject.id"
-                    class="progress-item"
-                    :class="{ active: selectedSubject && selectedSubject.id === subject.id }"
-                    @click="selectSubject(subject)"
-                  >
-                    <div class="progress-info">
-                      <div class="progress-title">{{ subject.name }}</div>
-                      <div class="progress-subtitle">{{ subject.description }}</div>
-                    </div>
-                    <div class="d-flex align-items-center gap-1">
-                      <button class="btn-edit" @click.stop="startSubjectEditForm(subject)" title="Edit">
-                        <i class="fas fa-edit"></i>
-                      </button>
-                      <button class="btn-logout" @click.stop="deleteItem('subject', subject.id)" title="Delete">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="alert alert-info text-center mt-3" v-if="!subjects.length && !loading.subjects">
-                  No subjects found.
-                </div>
-              </template>
-
-              <!-- Chapters List -->
-              <template v-if="sidebarMode === 'chapter' && selectedSubject">
-                <div class="progress-list">
-                  <div
-                    v-for="chapter in chapters"
-                    :key="chapter.id"
-                    class="progress-item"
-                    :class="{ active: selectedChapter && selectedChapter.id === chapter.id }"
-                    @click="selectChapter(chapter)"
-                  >
-                    <div class="progress-info">
-                      <div class="progress-title">{{ chapter.name }}</div>
-                    </div>
-                    <div class="d-flex align-items-center gap-1">
-                      <button class="btn-edit" @click.stop="startChapterEditForm(chapter)" title="Edit">
-                        <i class="fas fa-edit"></i>
-                      </button>
-                      <button class="btn-logout" @click.stop="deleteItem('chapter', chapter.id)" title="Delete">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="alert alert-info text-center mt-3" v-if="!chapters.length && !loading.chapters">
-                  No chapters found.
-                </div>
-              </template>
-
-              <!-- Quizzes List -->
-              <template v-if="sidebarMode === 'quiz' && selectedChapter">
-                <div class="progress-list">
-                  <div
-                    v-for="quiz in quizzes"
-                    :key="quiz.id"
-                    class="progress-item"
-                    :class="{ active: selectedQuiz && selectedQuiz.id === quiz.id }"
-                    @click="goToQuestionBank(quiz.id)"
-                  >
-                    <div class="progress-info">
-                      <div class="progress-title">{{ quiz.title }}</div>
-                      <div class="progress-subtitle">{{ Math.floor(quiz.duration) }} minutes</div>
-                    </div>
-                    <div class="d-flex align-items-center gap-1">
-                      <button class="btn-edit" @click.stop="startQuizEditForm(quiz)" title="Edit">
-                        <i class="fas fa-edit"></i>
-                      </button>
-                      <button class="btn-logout" @click.stop="deleteItem('quiz', quiz.id)" title="Delete">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="alert alert-info text-center mt-3" v-if="!quizzes.length && !loading.quizzes">
-                  No quizzes found.
-                </div>
-              </template>
-            </div>
-          </div>
-
-          <!-- Main Form Content -->
-          <div class="col-12 col-lg-8">
             <div class="section-card">
               <!-- Add/Edit Subject (No subject selected) -->
               <div v-if="sidebarMode === 'subject'" class="mb-4 text-center">
@@ -341,9 +218,9 @@
                     <input
                       type="number"
                       class="form-control"
-                      :value="quizEditForm.active ? quizEditForm.duration : newQuiz.duration"
-                      @input="quizEditForm.active ? quizEditForm.duration = Number($event.target.value) : newQuiz.duration = Number($event.target.value)"
-                      :placeholder="quizEditForm.active ? quizEditForm.originalDuration || 'Enter duration in minutes' : 'Enter duration in minutes'"
+                      :value="quizEditForm.active ? (quizEditForm.duration ? Math.round(quizEditForm.duration / 60) : '') : (newQuiz.duration ? Math.round(newQuiz.duration / 60) : '')"
+                      @input="quizEditForm.active ? quizEditForm.duration = Number($event.target.value) * 60 : newQuiz.duration = Number($event.target.value) * 60"
+                      :placeholder="quizEditForm.active ? (quizEditForm.originalDuration ? (Math.round(quizEditForm.originalDuration / 60)) + ' mins' : 'Enter duration in minutes') : 'Enter duration in minutes'"
                       min="1"
                       required
                     />
@@ -367,6 +244,147 @@
               </div>
             </div>
           </div>
+          <!-- Sidebar (now larger) -->
+          <div class="col-12 col-lg-8">
+            <div class="section-card">
+              <div class="section-header d-flex align-items-start justify-content-between gap-1 flex-wrap">
+                <div class="d-flex align-items-center gap-4">
+
+                  <button
+                  v-if="sidebarMode !== 'subject'"
+                  class="btn btn-link p-0 ms-1"
+                  style="font-size: 1.2rem; color: black; align-self: flex-start;"
+                  @click="handleSidebarBack"
+                  title="Back"
+                  >
+                  <i class="fas fa-arrow-left"></i>
+                </button>
+                <div style="margin-left: 0.25rem;">
+                  <h5 class="mb-0 d-inline">
+                    <i class="fas" :class="{
+                      'fa-book': sidebarMode === 'subject',
+                      'fa-layer-group': sidebarMode === 'chapter',
+                      'fa-book': sidebarMode === 'quiz'
+                    }" me-2></i>
+                    {{ sidebarMode === 'subject' ? 'Subjects' : 
+                       sidebarMode === 'chapter' ? 'Chapters' : 'Quizzes' }}
+                  </h5>
+                  <p v-if="sidebarMode === 'subject'">All available subjects</p>
+                  <p v-else-if="sidebarMode === 'chapter'">Chapters in {{ selectedSubject?.name }}</p>
+                  <p v-else>Quizzes in {{ selectedChapter?.name }}</p>
+                </div>
+              </div>
+                <!-- Search Bar on top right -->
+                <div class="d-flex align-items-center mb-2 mb-lg-0" style="gap: 0.75rem; min-width: 200px; max-width: 350px; flex: 1 1 auto; justify-content: flex-end;">
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    class="form-control"
+                    style="max-width: 250px;"
+                    placeholder="Search..."
+                    @input="onSearchInput"
+                  />
+                  <button
+                    v-if="searchQuery"
+                    class="btn btn-link p-0"
+                    style="color: #888; font-size: 1.1rem;"
+                    @click="clearSearch"
+                    title="Clear search"
+                  >
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <!-- Back Button (moved to right for alignment) -->
+               
+              </div>
+              
+              <!-- Subjects List -->
+              <template v-if="sidebarMode === 'subject'">
+                <div class="progress-list">
+                  <div
+                    v-for="subject in filteredSubjects"
+                    :key="subject.id"
+                    class="progress-item"
+                    :class="{ active: selectedSubject && selectedSubject.id === subject.id }"
+                    @click="selectSubject(subject)"
+                  >
+                    <div class="progress-info">
+                      <div class="progress-title">{{ subject.name }}</div>
+                      <div class="progress-subtitle">{{ subject.description }}</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                      <button class="btn-edit" @click.stop="startSubjectEditForm(subject)" title="Edit">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-logout" @click.stop="deleteItem('subject', subject.id)" title="Delete">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="alert alert-info text-center mt-3" v-if="!filteredSubjects.length && !loading.subjects">
+                  No subjects found.
+                </div>
+              </template>
+
+              <!-- Chapters List -->
+              <template v-if="sidebarMode === 'chapter' && selectedSubject">
+                <div class="progress-list">
+                  <div
+                    v-for="chapter in filteredChapters"
+                    :key="chapter.id"
+                    class="progress-item"
+                    :class="{ active: selectedChapter && selectedChapter.id === chapter.id }"
+                    @click="selectChapter(chapter)"
+                  >
+                    <div class="progress-info">
+                      <div class="progress-title">{{ chapter.name }}</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                      <button class="btn-edit" @click.stop="startChapterEditForm(chapter)" title="Edit">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-logout" @click.stop="deleteItem('chapter', chapter.id)" title="Delete">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="alert alert-info text-center mt-3" v-if="!filteredChapters.length && !loading.chapters">
+                  No chapters found.
+                </div>
+              </template>
+
+              <!-- Quizzes List -->
+              <template v-if="sidebarMode === 'quiz' && selectedChapter">
+                <div class="progress-list">
+                  <div
+                    v-for="quiz in filteredQuizzes"
+                    :key="quiz.id"
+                    class="progress-item"
+                    :class="{ active: selectedQuiz && selectedQuiz.id === quiz.id }"
+                    @click="goToQuestionBank(quiz.id)"
+                  >
+                    <div class="progress-info">
+                      <div class="progress-title">{{ quiz.title }}</div>
+                      <div class="progress-subtitle">{{ Math.floor(quiz.duration/60) }} minutes</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                      <button class="btn-edit" @click.stop="startQuizEditForm(quiz)" title="Edit">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-logout" @click.stop="deleteItem('quiz', quiz.id)" title="Delete">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="alert alert-info text-center mt-3" v-if="!filteredQuizzes.length && !loading.quizzes">
+                  No quizzes found.
+                </div>
+              </template>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -374,10 +392,40 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
 import api from '../../api'
 import { useRouter } from 'vue-router'
 const router = useRouter()
+
+// Search state
+const searchQuery = ref('')
+const onSearchInput = () => {
+  // No-op, v-model handles reactivity
+}
+const clearSearch = () => {
+  searchQuery.value = ''
+}
+
+// Filtered lists for search
+const filteredSubjects = computed(() => {
+  if (!searchQuery.value) return subjects.value
+  return subjects.value.filter(s =>
+    s.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (s.description && s.description.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  )
+})
+const filteredChapters = computed(() => {
+  if (!searchQuery.value) return chapters.value
+  return chapters.value.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
+const filteredQuizzes = computed(() => {
+  if (!searchQuery.value) return quizzes.value
+  return quizzes.value.filter(q =>
+    q.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+  )
+})
 
 // Toast state
 const toast = reactive({
@@ -654,7 +702,7 @@ async function updateQuiz() {
   error.addQuiz = ''
   if (!quizEditForm.title.trim() || !quizEditForm.id || !quizEditForm.duration) return
   try {
-    await api.put(`/quizzes/${quizEditForm.id}`, { title: quizEditForm.title, duration: quizEditForm.duration })
+    await api.put(`/quizzes/${quizEditForm.id}`, { title: quizEditForm.title, duration: quizEditForm.duration * 60 })
     await fetchQuizzes(selectedChapter.value.id)
     cancelQuizEditForm()
     showToast('Quiz updated successfully!')
@@ -725,7 +773,7 @@ async function addQuiz() {
     await api.post('quizzes/addquiz', { 
       title: newQuiz.title, 
       chapter_id: selectedChapter.value.id,
-      duration: newQuiz.duration
+      duration: newQuiz.duration * 60
     })
     newQuiz.title = ''
     newQuiz.duration = 1

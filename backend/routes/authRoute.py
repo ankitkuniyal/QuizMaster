@@ -93,7 +93,6 @@ def get_profile(userid):
     }), 200
 
 @auth_bp.route('/profile/<int:userid>', methods=['PUT'])
-
 def update_profile(userid):
     user = User.query.filter_by(id=userid).first()
     if not user:
@@ -102,15 +101,20 @@ def update_profile(userid):
     data = request.get_json()
     name = data.get('name', '').strip()
     qualification = data.get('qualification', '').strip()
+    password = data.get('password', '')
 
     # Validate at least one field is provided
-    if not name and not qualification:
-        return jsonify({'message': 'At least one field (name or qualification) is required.'}), 400
+    if not name and not qualification and not password:
+        return jsonify({'message': 'At least one field (name, qualification, or password) is required.'}), 400
 
     if name:
         user.name = name
     if qualification:
         user.qualification = qualification
+    if password:
+        if len(password) < 8:
+            return jsonify({'message': 'Password must be at least 8 characters long.'}), 400
+        user.password_hash = generate_password_hash(password)
 
     db.session.commit()
     return jsonify({'message': 'Profile updated successfully.'}), 200
@@ -137,26 +141,15 @@ def get_all_models():
 def delete_database():
     from models.models import db, User
     # Get the admin user(s) before dropping tables
-    admin_users = User.query.filter_by(role='admin').all()
-    admin_data = []
-    for admin in admin_users:
-        admin_data.append({
-            'id': admin.id,
-            'name': admin.name,
-            'email': admin.email,
-            'qualification': admin.qualification,
-            'role': admin.role
-        })
     db.drop_all()
     db.create_all()
     # Re-add admin users
-    for admin in admin_data:
-        new_admin = User(
-            id=admin['id'],
-            name=admin['name'],
-            email=admin['email'],
-            qualification=admin['qualification'],
-            role=admin['role']
+    new_admin = User(
+            name='Admin',
+                email="admin@example.com",
+                password_hash=generate_password_hash('admin123'),
+                qualification='Administrator',
+                role='admin'
         )
     db.session.add(new_admin)
     db.session.commit()
@@ -216,3 +209,72 @@ def get_all_results():
     results_data = [model_to_dict(result) for result in results]
     return jsonify({'results': results_data}), 200
 
+# leagues.py (Constants)
+LEAGUES = [
+    {"name": "Rookie", "min_score": 0, "icon": "fa-seedling", "color": "#4ade80"},      # Soft green
+    {"name": "Bronze", "min_score": 50, "icon": "fa-medal", "color": "#cd7f32"},        # Bronze
+    {"name": "Silver", "min_score": 65, "icon": "fa-medal", "color": "#a5a5a5"},        # Deeper silver
+    {"name": "Gold", "min_score": 80, "icon": "fa-medal", "color": "#ffd700"},          # Gold
+    {"name": "Platinum", "min_score": 90, "icon": "fa-crown", "color": "#38bdf8"}       # Vibrant blue
+]
+# authRoute.py
+@auth_bp.route('/league', methods=['POST'])
+def calculate_league():
+    data = request.get_json()
+    # Required params
+    avg_score = float(data.get('avg_score', 0))
+    streak = int(data.get('streak', 0))
+    quizzes_submitted = int(data.get('quizzes_submitted', 0))
+    
+    # Edge case: No quizzes taken
+    if quizzes_submitted == 0:
+        return jsonify({
+            "league": LEAGUES[0],
+            "next_league": LEAGUES[1],
+            "progress": 0,
+            "streak_boost": False
+        })
+    
+    # Calculate league score (custom formula)
+    league_score = calculate_league_score(avg_score, streak,quizzes_submitted)
+    
+    # Determine league
+    current_league = LEAGUES[0]
+    next_league = None
+    streak_boost = False
+    
+    for i, league in enumerate(LEAGUES):
+        if league_score >= league['min_score']:
+            current_league = league
+            if i < len(LEAGUES) - 1:
+                next_league = LEAGUES[i + 1]
+    
+    # Streak boost - temporary 1-tier promotion
+    if streak >= 7 and current_league != LEAGUES[-1]:
+        current_league = LEAGUES[min(i + 1, len(LEAGUES)-1)]
+        streak_boost = True
+    
+    # Progress to next league (0-100)
+    progress = 0
+    if next_league:
+        progress = min(100, 
+            ((league_score - current_league['min_score']) / 
+             (next_league['min_score'] - current_league['min_score'])) * 100
+        )
+    
+    return jsonify({
+        "league": current_league,
+        "next_league": next_league,
+        "progress": round(progress),
+        "streak_boost": streak_boost,
+        "league_score": league_score  
+    })
+
+def calculate_league_score(avg_score, streak, quizzes_submitted):
+    # League score formula: 70% avg_score, 20% quizzes_submitted (log scale), 10% streak
+    league_score = (
+        (avg_score * 0.7) +
+        (min(100, quizzes_submitted) ** 0.5 * 10 * 0.2) +  # sqrt scale, max 100 quizzes
+        (min(streak, 30) * 2 * 0.1)  # streak capped at 30, scaled to 60
+    )
+    return league_score

@@ -20,10 +20,14 @@
               </p>
             </div>
           </div>
-          <div class="col-12 col-lg-5 d-flex justify-content-lg-end align-items-center mt-3 mt-lg-0">
+          <div class="col-12 col-lg-5 d-flex justify-content-lg-end align-items-center mt-3 mt-lg-0 gap-2">
             <router-link to="/dashboard/admin" class="btn btn-accent">
               <i class="fas fa-tachometer-alt me-1"></i>
               Dashboard
+            </router-link>
+            <router-link to="/dashboard/admin/subjects" class="btn btn-accent">
+              <i class="fas fa-book me-1"></i>
+              Subjects
             </router-link>
           </div>
         </div>

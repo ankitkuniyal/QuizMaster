@@ -121,6 +121,17 @@
               </div>
             </div>
             <div class="col-6 col-lg-3">
+              <div class="stat-card stat-warning">
+                <div class="stat-icon">
+                  <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">{{ analytics.totalSubjects }}</div>
+                  <div class="stat-label">Total Subjects</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-lg-3">
               <div class="stat-card stat-info">
                 <div class="stat-icon">
                   <i class="fas fa-book"></i>
@@ -139,17 +150,6 @@
                 <div class="stat-content">
                   <div class="stat-number">{{ analytics.totalQuizzes }}</div>
                   <div class="stat-label">Total Quizzes</div>
-                </div>
-              </div>
-            </div>
-            <div class="col-6 col-lg-3">
-              <div class="stat-card stat-warning">
-                <div class="stat-icon">
-                  <i class="fas fa-layer-group"></i>
-                </div>
-                <div class="stat-content">
-                  <div class="stat-number">{{ analytics.totalSubjects }}</div>
-                  <div class="stat-label">Total Subjects</div>
                 </div>
               </div>
             </div>

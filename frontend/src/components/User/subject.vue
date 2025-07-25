@@ -26,7 +26,7 @@
       </div>
 
       <!-- Main Content -->
-      <div class="content-section ">
+      <div class="content-section content-section--reduced-gap">
         <div class="row g-4">
           <div class="col-12">
             <div class="section-card">
@@ -483,7 +483,7 @@ onMounted(async () => {
 
 /* Header Section */
 .dashboard-header {
-  margin-bottom: 3rem;
+  margin-bottom: 1.25rem; /* Reduced from 3rem to 1.25rem */
 }
 
 .welcome-content {
@@ -627,6 +627,9 @@ onMounted(async () => {
 /* Content Section */
 .content-section {
   margin-bottom: 3rem;
+}
+.content-section--reduced-gap {
+  margin-top: 0.5rem; /* Add a small gap between header and content */
 }
 
 .section-card {

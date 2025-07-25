@@ -739,7 +739,7 @@ async function deleteDatabase() {
     questions.value = []
     results.value = []
     alert('Database deleted successfully.')
-  window.location.reload()
+   window.location.reload()
   } catch (e) {
     error.value = 'Failed to delete database.'
   } finally {

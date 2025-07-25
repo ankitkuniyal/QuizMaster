@@ -81,6 +81,18 @@
                           class="form-input"
                         />
                       </div>
+                      <div class="form-group">
+                        <label for="edit-password">New Password</label>
+                        <input
+                          id="edit-password"
+                          v-model="editUser.password"
+                          type="password"
+                          class="form-input"
+                          autocomplete="new-password"
+                          placeholder="Leave blank to keep current password"
+                        />
+                        <small style="color: #6b7280;">Leave blank to keep your current password.</small>
+                      </div>
                       <div class="form-actions">
                         <button
                           type="button"
@@ -122,8 +134,8 @@
                 <i class="fas fa-book"></i>
               </div>
               <div class="stat-content">
-                <div class="stat-number">{{ stats.subjectsAttempted }}</div>
-                <div class="stat-label">Subjects Attempted</div>
+                <div class="stat-number">{{ stats.chaptersAttempted }}</div>
+                <div class="stat-label">Chapters Attempted</div>
               </div>
             </div>
           </div>
@@ -167,29 +179,53 @@
             </div>
           </div>
           <div class="col-12 col-lg-4">
-            <div class="target-card">
-              <div class="target-header">
-                <h5><i class="fas fa-target me-2"></i>Weekly Target</h5>
+            <!-- League Card (replaces Weakest Chapter Card) -->
+            <div class="league-card" v-if="leagueData && leagueData.league">
+              <div class="league-header">
+                <h5><i class="fas fa-trophy me-2"></i>Your League</h5>
+                <p>Progress through leagues by improving your scores</p>
               </div>
-              <div class="target-body">
-                <div class="target-visual">
-                  <div class="target-circle">
-                    <div class="target-progress" :style="{ '--progress': (stats.totalQuizzes / stats.weeklyTarget) * 100 + '%' }">
-                      <span class="target-percentage">{{ Math.round((stats.totalQuizzes / stats.weeklyTarget) * 100) }}%</span>
+              <div class="league-content">
+                <!-- League Badge -->
+                <div class="league-badge" :style="{ '--league-color': leagueData.league.color }">
+                  <div class="league-icon">
+                    <i :class="['fas', leagueData.league.icon]"></i>
+                  </div>
+                  <div class="league-info">
+                    <h6>{{ leagueData.league.name }} League</h6>
+                    <div class="league-stats">
+                      <span><i class="fas fa-star"></i> {{ Math.floor(leagueData.league_score) }}% League Score</span>
+                      <span><i class="fas fa-fire"></i> {{ stats.streak }} Day Streak</span>
                     </div>
                   </div>
+                  <span v-if="leagueData.streak_boost" class="streak-tag">
+                    <i class="fas fa-bolt"></i> Streak Boost
+                  </span>
                 </div>
-                <div class="target-info">
-                  <div class="target-stat">
-                    <span class="target-current">{{ stats.totalQuizzes }}</span>
-                    <span class="target-total">/ {{ stats.weeklyTarget }}</span>
+                <!-- Progress to Next League -->
+                <div class="league-progress" v-if="leagueData.next_league">
+                  <div class="progress-header">
+                    <span>Next: {{ leagueData.next_league.name }}</span>
+                    <span>Starts from {{ leagueData.next_league.min_score }}%</span>
                   </div>
-                  <div class="target-label">Quizzes this week</div>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" 
+                         :style="{ width: leagueData.progress + '%' }"></div>
+                    <span class="progress-percent">{{ leagueData.progress }}%</span>
+                  </div>
                 </div>
-                <div class="streak-info">
-                  <i class="fas fa-fire"></i>
-                  <span>{{ stats.streak }} day streak!</span>
+                <div v-else class="league-max">
+                  <i class="fas fa-crown"></i> You've reached the highest league!
                 </div>
+              </div>
+            </div>
+            <!-- Fallback if no data -->
+            <div class="weakness-card" v-else>
+              <div class="weakness-header">
+                <h5><i class="fas fa-spinner fa-spin me-2"></i>Loading League...</h5>
+              </div>
+              <div class="weakness-body">
+                <p>Loading your league info...</p>
               </div>
             </div>
           </div>
@@ -199,25 +235,34 @@
       <!-- Main Content Grid -->
       <div class="content-section mb-5">
         <div class="row g-4"> 
-          <!---
-          Subject
-          <div class="col-12 col-xl-8">
+          <!-- Explore Subjects Section (replaces recommendations) -->
+          <div class="col-12">
             <div class="section-card">
-              <div class="section-header">
-                <h5><i class="fas fa-layer-group me-2"></i>Your Subjects</h5>
-                <p>Explore your learning materials</p>
+              <div class="section-header" style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <h5 style="color: #00838f;"><i class="fas fa-layer-group me-2"></i>Explore Subjects</h5>
+                  <p style="color: #00838f;">Browse all your available subjects and chapters</p>
+                </div>
+                <router-link
+                  :to="`/user/subjects/${userId}`"
+                  class="subject-btn"
+                  style="margin-left: 1rem; white-space: nowrap; background: linear-gradient(135deg, #00838f 0%, #00bcd4 100%);"
+                >
+                  Explore All <i class="fas fa-arrow-right ms-1"></i>
+                </router-link>
               </div>
               <div class="subjects-grid">
                 <div
                   v-for="subject in subjects"
                   :key="subject.id"
                   class="subject-card"
+                  style="background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);"
                 >
-                  <div class="subject-icon" :style="{ color: subject.color }">
+                  <div class="subject-icon" :style="{ color: '#00838f' }">
                     <i :class="subject.icon"></i>
                   </div>
                   <div class="subject-info">
-                    <h6>{{ subject.name }}</h6>
+                    <h6 style="color: #00838f;">{{ subject.name }}</h6>
                     <div class="subject-stats">
                       <span>{{ subject.chapters }} chapters</span>
                       <span>{{ subject.quizzes }} quizzes</span>
@@ -226,84 +271,17 @@
                   <router-link
                     :to="`/subjects/${subject.id}/chapters`"
                     class="subject-btn"
+                    style="background: linear-gradient(135deg, #00838f 0%, #00bcd4 100%);"
                   >
                     Explore <i class="fas fa-arrow-right ms-1"></i>
                   </router-link>
                 </div>
               </div>
             </div>
-          </div> -->
-
-          <!-- Recommendations Section (now main content, not sidebar) -->
-          <div class="suggestions-section mb-5" v-if="suggested.length">
-            <div class="section-card">
-              <div class="section-header" style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                  <h5><i class="fas fa-star me-2"></i>Recommended for You</h5>
-                  <p>Based on your learning progress</p>
-                </div>
-                <router-link
-                  :to="`/user/subjects/${userId}`"
-                  class="suggestion-btn"
-                  style="margin-left: 1rem; white-space: nowrap;"
-                >
-                  Explore All <i class="fas fa-arrow-right ms-1"></i>
-                </router-link>
-              </div>
-              <div class="suggestions-grid">
-                <div
-                  v-for="quiz in suggested"
-                  :key="quiz.id"
-                  class="suggestion-card"
-                >
-                  <div class="suggestion-badge">
-                    <i class="fas fa-star"></i>
-                    Recommended
-                  </div>
-                  <div class="suggestion-content">
-                    <h6>{{ quiz.title }}</h6>
-                    <p>{{ quiz.chapterName }}</p>
-                    <router-link
-                      :to="`/quizzes/${quiz.id}/start`"
-                      class="suggestion-btn"
-                    >
-                      Start Quiz <i class="fas fa-arrow-right ms-1"></i>
-                    </router-link>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
-          <!-- Sidebar (now after recommendations) -->
+          <!-- Sidebar (only Announcements remain) -->
           <div class="col-12 col-xl-4">
-            <!-- In Progress -->
-            <div class="section-card mb-4" v-if="inProgress.length">
-              <div class="section-header">
-                <h6>
-                  <i class="fas fa-play-circle me-2"></i>Continue Learning
-                </h6>
-              </div>
-              <div class="progress-list">
-                <div
-                  v-for="item in inProgress"
-                  :key="item.quizId"
-                  class="progress-item"
-                >
-                  <div class="progress-info">
-                    <div class="progress-title">{{ item.chapterName }}</div>
-                    <div class="progress-subtitle">{{ item.quizTitle }}</div>
-                  </div>
-                  <router-link
-                    :to="`/quizzes/${item.quizId}/resume`"
-                    class="progress-btn"
-                  >
-                    <i class="fas fa-play"></i>
-                  </router-link>
-                </div>
-              </div>
-            </div>
-
             <!-- Announcements -->
             <div class="section-card" v-if="announcements.length">
               <div class="section-header">
@@ -329,61 +307,7 @@
               </div>
             </div>
           </div>
-          <!-- Activity Table -->
-          <div class="col-12 mt-4">
-            <div class="section-card">
-              <div class="section-header">
-                <h5><i class="fas fa-history me-2"></i>Recent Activity</h5>
-                <p>Your latest quiz results</p>
-              </div>
-              <div class="activity-table-wrapper">
-                <table class="activity-table">
-                  <thead>
-                    <tr>
-                      <th>Score</th>
-                      <th>Date</th>
-                      <th>Quiz</th>
-                      <th>View</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="activity in recentActivity" :key="activity.id">
-                      <td>
-                        <span
-                          class="score-badge"
-                          :class="getScoreClass(activity.score)"
-                        >
-                          {{ activity.score }}%
-                        </span>
-                      </td>
-                      <td>
-                        <span class="activity-date">{{ activity.date }}</span>
-                      </td>
-                      <td>
-                        <span class="activity-quiz">{{ activity.quizTitle }}</span>
-                      </td>
-                      <td>
-                        <router-link
-                          :to="`/quizzes/${activity.quizId}/results`"
-                          class="activity-btn"
-                        >
-                          <i class="fas fa-eye"></i>
-                        </router-link>
-                      </td>
-                    </tr>
-                    <tr v-if="recentActivity.length === 0">
-                      <td colspan="4" class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <div>No activity yet</div>
-                        <small>Start taking quizzes to see your progress</small>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <!-- End Activity Table -->
+          <!-- End Sidebar -->
         </div>
       </div>
     </div>
@@ -391,22 +315,37 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted, nextTick } from "vue";
 import Chart from "chart.js/auto";
-
 import { useRoute, useRouter } from "vue-router";
 const route = useRoute();
 const router = useRouter();
 const userId = route.params.userid;
-
 import api from "../../api"; // adjust path as needed
 
 const user = ref({});
-
-const editUser = ref({ ...user.value });
+const editUser = ref({ ...user.value, password: "" });
 const profileEdit = ref(false);
 const isLoading = ref(false);
 const error = ref(null);
+
+const leagueData = ref({
+  league: { name: "Loading..." },
+  progress: 0
+})
+
+async function fetchLeague() {
+  // Get these values from your existing stats
+  const payload = {
+    avg_score: stats.value.avgScore,  // From your dashboard stats
+    streak: stats.value.streak,       // From your streak counter
+    quizzes_submitted: stats.value.totalQuizzes
+  }
+  
+  const res = await api.post('/auth/league', payload)
+  leagueData.value = res.data
+ 
+} 
 
 async function fetchUserProfile() {
   try {
@@ -425,7 +364,7 @@ async function fetchUserProfile() {
 onMounted(fetchUserProfile);
 
 function startProfileEdit() {
-  editUser.value = { ...user.value };
+  editUser.value = { ...user.value, password: "" };
   profileEdit.value = true;
 }
 
@@ -433,10 +372,14 @@ async function saveProfile() {
   try {
     isLoading.value = true;
     error.value = null;
-    await api.put(`/auth/profile/${userId}`, {
+    const payload = {
       name: editUser.value.name,
       qualification: editUser.value.qualification,
-    });
+    };
+    if (editUser.value.password && editUser.value.password.trim() !== "") {
+      payload.password = editUser.value.password;
+    }
+    await api.put(`/auth/profile/${userId}`, payload);
     await fetchUserProfile();
     profileEdit.value = false;
   } catch (e) {
@@ -452,9 +395,8 @@ function cancelProfileEdit() {
   error.value = null;
 }
 
-// Logout function
 function logout() {
- localStorage.removeItem('token');
+  localStorage.removeItem('token');
   router.push("/login");
 }
 
@@ -488,117 +430,172 @@ const tips = [
 ];
 
 function getTipOfTheDay() {
-  // Use the current date as a seed to pick a tip for the day
   const today = new Date();
-  // Format: YYYYMMDD
   const dateSeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-  // Simple deterministic "random" index based on date
   const index = dateSeed % tips.length;
   return tips[index];
 }
 
 const tipOfTheDay = ref("");
 
-// --- REWRITE: Fetch stats from backend using @models.py and @authRoute.py ---
+// --- Fetch stats from backend using @models.py and @authRoute.py ---
 const stats = ref({
   totalQuizzes: 0,
   avgScore: 0,
-  subjectsAttempted: 0,
+  chaptersAttempted: 0,
   streak: 0,
   weeklyTarget: 7,
 });
 
-// --- Progress Chart Data for ALL quizzes submitted ---
 const progressData = ref([]);
 const progressLabels = ref([]);
 
-// Helper to get weekday name from date (0=Sun, 1=Mon, ..., 6=Sat)
 function getWeekdayName(date) {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][date.getDay()];
 }
 
 async function fetchUserStats() {
   try {
-    // Fetch all quizzes, subjects, and results from backend
-    const [quizzesRes, subjectsRes, resultsRes] = await Promise.all([
+    const [quizzesRes, , resultsRes] = await Promise.all([
       api.get('/auth/quizzes'),
-      api.get('/auth/subjects'),
+      api.get('/auth/subjects'), // not used, so skip assignment
       api.get('/auth/results'),
     ]);
 
-    // Filter results for this user
-    // Ensure both r.user_id and userId are the same type (number)
+    const quizzes = quizzesRes.data.quizzes || [];
+    const quizIdToChapterId = Object.fromEntries(quizzes.map(q => [Number(q.id), q.chapter_id]));
+
+    // Filter and sort user results once
     const userResults = resultsRes.data.results
       .filter(r => Number(r.user_id) === Number(userId))
-      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); // sort by date ascending
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-    // Total quizzes submitted by user
-    const totalQuizzes = userResults.length;
+    // Calculate totalQuizzes, avgScore, chaptersAttempted in a single pass
+    let totalScore = 0;
+    let totalQuizzes = 0;
+    const chapterIds = new Set();
+    const dateSet = new Set();
+    const progressScores = [];
+    const progressLabelList = [];
+    const activityList = [];
 
-    // Average score (rounded to nearest integer)
-    const avgScore = totalQuizzes
-      ? Math.round(userResults.reduce((sum, r) => sum + (r.score || 0), 0) / totalQuizzes)
-      : 0;
-
-    // Subjects attempted (unique subject_ids in user's results)
-    const subjectIds = new Set(userResults.map(r => r.subject_id));
-    const subjectsAttempted = subjectIds.size;
-
-    // Day streak: count consecutive days with at least one quiz result
-    const dates = userResults
-      .map(r => r.created_at ? new Date(r.created_at).toDateString() : null)
-      .filter(Boolean);
-    const uniqueDates = Array.from(new Set(dates)).sort((a, b) => new Date(b) - new Date(a));
-    let streak = 0;
-    let current = new Date();
-    for (let i = 0; i < uniqueDates.length; i++) {
-      if (new Date(uniqueDates[i]).toDateString() === current.toDateString()) {
-        streak++;
-        current.setDate(current.getDate() - 1);
+    for (let i = 0; i < userResults.length; i++) {
+      const r = userResults[i];
+      const score = r.score || 0;
+      totalScore += score;
+      totalQuizzes++;
+      // For chaptersAttempted
+      const chapterId = quizIdToChapterId[Number(r.quiz_id)];
+      if (chapterId !== undefined && chapterId !== null) {
+        chapterIds.add(chapterId);
+      }
+      // For streak
+      if (r.created_at) {
+        const dateStr = new Date(r.created_at).toDateString();
+        dateSet.add(dateStr);
+      }
+      // For progress chart
+      progressScores.push(score);
+      if (r.created_at) {
+        const date = new Date(r.created_at);
+        const day = date.getDate();
+        const month = date.toLocaleString('default', { month: 'long' });
+        progressLabelList.push(`${day} ${month}`);
       } else {
-        break;
+        progressLabelList.push("");
       }
     }
 
-    stats.value = {
-      totalQuizzes,
-      avgScore,
-      subjectsAttempted,
-      streak,
-      weeklyTarget: 7,
-    };
+    // --- STREAK LOGIC CHECKED AND FIXED BELOW ---
+    // Calculate streak: number of consecutive days (including today) with at least one quiz submission
+    // Sort uniqueDates ascending (oldest to newest)
+    const uniqueDates = Array.from(dateSet)
+      .map(d => new Date(d))
+      .sort((a, b) => a - b);
 
-    // --- Progress graph: show all user quiz scores from the beginning ---
-    // Each point: label = date (YYYY-MM-DD), value = score
-    progressData.value = userResults.map(r => r.score || 0);
-    progressLabels.value = userResults.map(r => {
-      if (r.created_at) {
-        // Format as "YYYY-MM-DD"
-        return r.created_at.slice(0, 10);
+    let streak = 0;
+    if (uniqueDates.length > 0) {
+      // Start from today, go backwards
+      let current = new Date();
+      current.setHours(0, 0, 0, 0); // normalize to midnight
+      for (let i = uniqueDates.length - 1; i >= 0; i--) {
+        const date = uniqueDates[i];
+        // Compare only the date part
+        if (date.getTime() === current.getTime()) {
+          streak++;
+          // Move to previous day
+          current.setDate(current.getDate() - 1);
+        } else if (date.getTime() < current.getTime()) {
+          // If the date is before the current day, check if it's exactly one day before
+          // If not, streak is broken
+          if (date.getTime() === (current.getTime() - 24 * 60 * 60 * 1000)) {
+            streak++;
+            current.setDate(current.getDate() - 1);
+          } else {
+            break;
+          }
+        } else {
+          // If the date is in the future (shouldn't happen), skip
+          continue;
+        }
       }
-      return "";
-    });
-    // If you need to use created_at instead of date_submitted, this is already correct.
+    }
 
-    // If you want to update recentActivity to use created_at instead of date_submitted:
-    // (Assuming you want to show the 5 most recent activities)
-    recentActivity.value = userResults
-      .slice(-5)
-      .reverse()
-      .map((r, idx) => ({
-        id: r.id || idx,
+    // Prepare recentActivity (last 5, most recent first)
+    for (let i = Math.max(0, userResults.length - 5); i < userResults.length; i++) {
+      const r = userResults[i];
+      activityList.push({
+        id: r.id || i,
         quizId: r.quiz_id,
         quizTitle: r.quiz_title || "Quiz",
         score: r.score,
         date: r.created_at ? r.created_at.slice(0, 10) : "",
-      }));
+      });
+    }
+    activityList.reverse();
 
-    // If you want to update inProgress as well, you can do so here if needed.
+    stats.value = {
+      totalQuizzes,
+      avgScore: totalQuizzes ? Math.round(totalScore / totalQuizzes) : 0,
+      chaptersAttempted: chapterIds.size,
+      streak,
+      weeklyTarget: 7,
+    };
 
-    // console.log(userResults)
+    progressData.value = progressScores;
+    progressLabels.value = progressLabelList;
+    recentActivity.value = activityList;
+
+    // Fetch league after stats are ready
+    fetchLeague();
+
   } catch (e) {
-    // fallback: keep stats as 0
     console.error("Failed to fetch user stats", e);
+  }
+}
+
+// --- FETCH SUBJECTS FROM API AND SHOW DYNAMICALLY ---
+const subjects = ref([]);
+async function fetchSubjects() {
+  try {
+    const res = await api.get('/subjects/with-details');
+    // The backend returns an array of subject objects directly (not wrapped in {subjects: ...})
+    // Each subject has: id, name, description, chapters (array of chapters)
+    const allSubjects = (res.data || []).map(subj => ({
+      id: subj.id,
+      name: subj.name,
+      description: subj.description,
+      chapters: Array.isArray(subj.chapters) ? subj.chapters.length : 0,
+      quizzes: Array.isArray(subj.chapters)
+        ? subj.chapters.reduce((sum, ch) => sum + (Array.isArray(ch.quizzes) ? ch.quizzes.length : 0), 0)
+        : 0,
+      icon: "fas fa-book",
+      color: "#00838f"
+    }));
+    subjects.value = allSubjects.slice(0, 2); // Keep only top 2
+  } catch (e) {
+    console.error("Failed to fetch subjects", e);
+    subjects.value = [];
   }
 }
 
@@ -614,7 +611,6 @@ onMounted(() => {
   tipOfTheDay.value = getTipOfTheDay();
 
   fetchUserStats().then(() => {
-    // Render progress chart after data is ready
     nextTick(() => {
       const ctx = document.querySelector("canvas");
       if (ctx) {
@@ -647,7 +643,6 @@ onMounted(() => {
               tooltip: {
                 callbacks: {
                   title: function(context) {
-                    // Show date in tooltip
                     return "Date: " + context[0].label;
                   },
                   label: function(context) {
@@ -695,26 +690,12 @@ onMounted(() => {
       }
     });
   });
+
+  // Fetch subjects from API
+  fetchSubjects();
 });
 
-const subjects = ref([
-  {
-    id: 1,
-    name: "Mathematics",
-    chapters: 8,
-    quizzes: 12,
-    icon: "fas fa-calculator",
-    color: "#3b82f6",
-  },
-  {
-    id: 2,
-    name: "Science",
-    chapters: 7,
-    quizzes: 10,
-    icon: "fas fa-flask",
-    color: "#10b981",
-  },
-]);
+
 
 const inProgress = ref([
   { quizId: 101, quizTitle: "Algebra Basics", chapterName: "Algebra" },
@@ -917,7 +898,148 @@ function getGreeting() {
   display: flex;
   gap: 0.5rem;
 }
+.league-card {
+  background: white;
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
 
+.league-header {
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.league-header h5 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.league-header p {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.league-content {
+  padding: 1.5rem;
+}
+
+.league-badge {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, var(--league-color, #3b82f6) 0%, color-mix(in srgb, var(--league-color, #3b82f6), #000 20%) 100%);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  color: white;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.league-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.league-info h6 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.league-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.league-stats i {
+  margin-right: 0.25rem;
+}
+
+.streak-tag {
+  position: absolute;
+  top: -0.5rem;
+  right: 1rem;
+  background: #fff;
+  color: var(--league-color, #3b82f6);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.league-progress {
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.progress-header span:first-child {
+  color: #1f2937;
+}
+
+.progress-header span:last-child {
+  /* fallback to blue if var not set */
+  color: var(--league-color, #3b82f6);
+  font-weight: 600;
+}
+
+.progress-bar-container {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 1rem;
+  position: relative;
+  margin-bottom: 0.5rem;
+  /* Add overflow hidden to ensure bar stays rounded */
+  overflow: hidden;
+}
+
+.progress-bar {
+  /* fallback to blue if var not set */
+  background: linear-gradient(90deg, var(--league-color, #3b82f6) 0%, color-mix(in srgb, var(--league-color, #3b82f6), #60a5fa 60%) 100%);
+  height: 100%;
+  border-radius: 1rem;
+  transition: width 0.5s ease;
+}
+
+.progress-percent {
+  font-size: 0.8rem;
+  color: #6b7280;
+  display: block;
+  text-align: right;
+}
+
+.league-max {
+  text-align: center;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  color: var(--league-color, #3b82f6);
+  font-weight: 600;
+}
+
+.league-max i {
+  margin-right: 0.5rem;
+}
 .btn-edit {
   width: 35px;
   height: 35px;
@@ -971,7 +1093,95 @@ function getGreeting() {
     transform: translateY(0);
   }
 }
+.weakness-card {
+  background: white;
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 184, 212, 0.08);
+  margin-bottom: 2rem;
+}
 
+.weakness-header h5 {
+  color: #ef4444;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.weakness-visual {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.weakness-progress {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  position: relative;
+  background: conic-gradient(
+    from 0deg,
+    #ef4444 0deg,
+    #ef4444 var(--progress, 0deg),
+    #f3f4f6 var(--progress, 0deg),
+    #f3f4f6 360deg
+  );
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.weakness-progress::before {
+  content: "";
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+}
+
+.weakness-percentage {
+  position: relative;
+  z-index: 1;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #ef4444;
+}
+
+.weakness-subject {
+  margin-top: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.weakness-subject i {
+  color: #ef4444;
+  margin-right: 0.5rem;
+}
+
+.weakness-stat {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.weakness-btn {
+  display: block;
+  text-align: center;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.weakness-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
 .form-group {
   margin-bottom: 1rem;
 }
