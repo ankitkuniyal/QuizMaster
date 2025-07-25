@@ -1,0 +1,4 @@
+/.venv
+/instance
+/kill_port.py
+/node_modules
