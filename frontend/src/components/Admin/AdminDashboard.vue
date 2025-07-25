@@ -214,11 +214,42 @@
           </div>
         </div>
 
-        <!-- Quick Actions Section -->
+        <!-- Quick Actions Section (Interchanged with Recent Activity) -->
         <div class="content-section">
           <div class="row g-4">
-            <!-- Quick Actions -->
+            <!-- Recent Activity (now in col-12 col-lg-8) -->
             <div class="col-12 col-lg-8">
+              <div class="section-card">
+                <div class="section-header">
+                  <h6><i class="fas fa-bell me-2"></i>Recent Activity</h6>
+                </div>
+                <div class="announcements-list">
+                  <div class="announcement-item">
+                    <div class="announcement-icon">
+                      <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="announcement-content">
+                      <h6>New User Registration</h6>
+                      <p>5 new users joined today</p>
+                      <span class="announcement-date">Today</span>
+                    </div>
+                  </div>
+                  <div class="announcement-item">
+                    <div class="announcement-icon">
+                      <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="announcement-content">
+                      <h6>Quiz Activity</h6>
+                      <p>High engagement this week</p>
+                      <span class="announcement-date">This week</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions (now in col-12 col-lg-4) -->
+            <div class="col-12 col-lg-4">
               <div class="section-card">
                 <div class="section-header">
                   <h5><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
@@ -262,37 +293,6 @@
                       <a href="#" class="suggestion-btn">
                         View <i class="fas fa-arrow-right ms-1"></i>
                       </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="col-12 col-lg-4">
-              <div class="section-card">
-                <div class="section-header">
-                  <h6><i class="fas fa-bell me-2"></i>Recent Activity</h6>
-                </div>
-                <div class="announcements-list">
-                  <div class="announcement-item">
-                    <div class="announcement-icon">
-                      <i class="fas fa-user-plus"></i>
-                    </div>
-                    <div class="announcement-content">
-                      <h6>New User Registration</h6>
-                      <p>5 new users joined today</p>
-                      <span class="announcement-date">Today</span>
-                    </div>
-                  </div>
-                  <div class="announcement-item">
-                    <div class="announcement-icon">
-                      <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="announcement-content">
-                      <h6>Quiz Activity</h6>
-                      <p>High engagement this week</p>
-                      <span class="announcement-date">This week</span>
                     </div>
                   </div>
                 </div>
